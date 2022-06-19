@@ -1,11 +1,16 @@
-# -*- coding: utf-8 -*-
+"""Parameters value namespaces"""
 
-class LogStream(object):
+
+class LogStream:
+    """Most common logging streams"""
+
     STDOUT = "ext://sys.stdout"
     STDERR = "ext://sys.stderr"
 
 
-class LogLevel(object):
+class LogLevel:
+    """Most common logging levels"""
+
     FATAL = "FATAL"
     ERROR = "ERROR"
     WARNING = "WARNING"

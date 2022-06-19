@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+"""Logging classes extensions"""
 
 from __future__ import annotations
 
@@ -17,8 +17,10 @@ __all__ = [
 ]
 
 
+# pylint: disable=protected-access
 @contextmanager
 def module_lock():
+    """Wrap routines into native `logging` package lock"""
     logging._acquireLock()
     try:
         yield
@@ -43,39 +45,44 @@ class LogRecord(logging.LogRecord):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.truncname: str = self.name[(len(c.APP_ROOT_LOGGER) + 1):]
+        self.truncname: str = self.name.split(".", maxsplit=1)[1]
         self.coloredlevelname: str = f"{self._COLOR_MAP[self.levelname]}{self.levelname}\033[0m"
 
 
 class Logger(logging.Logger):
     """Provides even more detailed debugging method 'trace'"""
+
     TRACE: int = 5
 
     def warn(self, msg: t.Any, *args, **kwargs) -> t.NoReturn:
         """Mute implementation"""
         raise NotImplementedError
 
+    # pylint: disable=keyword-arg-before-vararg
     def trace(self, msg: t.Any, *args, **kws) -> None:
         """Ultra-detailed events logging method"""
         if self.isEnabledFor(self.TRACE):
             self._log(self.TRACE, msg, args, **kws)
 
-    # TODO: pylint: disable=keyword-arg-before-vararg
-    def exception(self, msg: t.Any = None, *args, exc_info: bool = True, **kwargs) -> None:
+    def exception(self, msg: object = None, *args, exc_info: bool = True, **kwargs) -> None:  # type: ignore
+        """Make `msg` param optional"""
         super().exception("" if msg is None else msg, *args, exc_info=exc_info, **kwargs)
 
 
-class LoggerProperty(object):
+class LoggerProperty:
+    """Class-level logger property"""
 
     @staticmethod
     @lru_cache(1)
-    def prepare(caller_type: type) -> Logger:
-        logger_name: str = ".".join((c.APP_ROOT_LOGGER, caller_type.__module__, caller_type.__name__))
-        return logging.getLogger(logger_name)
+    def _prepare(caller_type: type) -> Logger:
+        logger_name: str = ".".join((c.DEFAULT_BASE_LOGGER, caller_type.__module__, caller_type.__name__))
+        return t.cast(Logger, logging.getLogger(logger_name))
 
     def __get__(self, caller_instance: t.Any, caller_type: type) -> Logger:
-        return self.prepare(caller_type)
+        return self._prepare(caller_type)
 
 
-class LoggerMixin(object):
+class LoggerMixin:
+    """Add `logger` property"""
+
     logger = LoggerProperty()

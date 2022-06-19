@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+"""Initial configuration routines"""
 
 import logging
 import logging.config
@@ -16,13 +16,14 @@ __all__ = [
 
 
 def configure_logging(
-        main_file: t.Optional[str] = None,
-        level: str = LogLevel.INFO,
-        record_format: t.Optional[str] = None,
-        stream: t.Union[str, t.TextIO, None] = LogStream.STDERR,
-        colorize: bool = False,
-        root_logger_name: t.Optional[str] = None,
+    main_file: t.Optional[str] = None,
+    level: str = LogLevel.INFO,
+    record_format: t.Optional[str] = None,
+    stream: t.Union[str, t.TextIO, None] = LogStream.STDERR,
+    colorize: bool = False,
+    root_logger_name: t.Optional[str] = None,
 ) -> None:
+    """Perform all logging configurations"""
     with module_lock():
         if ConfigurationAuxiliaryStorage.HAS_BEEN_CONFIGURED:
             raise RuntimeError("Logging has already been configured")
@@ -30,14 +31,12 @@ def configure_logging(
         # Now apply patches
         logging.setLoggerClass(Logger)
         logging.setLogRecordFactory(LogRecord)
-        # Some
-        logging.LogRecord = LogRecord
         logging.addLevelName(Logger.TRACE, "TRACE")
         setattr(logging, "TRACE", Logger.TRACE)
 
         if root_logger_name is not None:
-            c.APP_ROOT_LOGGER = root_logger_name
-        handlers: t.Dict[str, t.Dict[str, str]] = {}
+            c.DEFAULT_BASE_LOGGER = root_logger_name
+        handlers: t.Dict[str, t.Dict[str, t.Union[str, t.TextIO]]] = {}
         if record_format is not None and colorize:
             raise ValueError("Can't colorize custom record format")
 
@@ -62,19 +61,21 @@ def configure_logging(
                 "filename": filename,
             }
 
-        logging.config.dictConfig({
-            "version": 1,
-            "handlers": handlers,
-            "loggers": {
-                c.APP_ROOT_LOGGER: {
-                    "handlers": list(handlers),
-                    "level": getattr(logging, level),
+        logging.config.dictConfig(
+            {
+                "version": 1,
+                "handlers": handlers,
+                "loggers": {
+                    c.DEFAULT_BASE_LOGGER: {
+                        "handlers": list(handlers),
+                        "level": getattr(logging, level),
+                    },
                 },
-            },
-            "formatters": {
-                "__custom__": {
-                    "format": record_format or (c.DEFAULT_LOG_FORMAT_COLORED if colorize else c.DEFAULT_LOG_FORMAT)
+                "formatters": {
+                    "__custom__": {
+                        "format": record_format or (c.DEFAULT_LOG_FORMAT_COLORED if colorize else c.DEFAULT_LOG_FORMAT)
+                    },
                 },
-            },
-        })
+            }
+        )
         ConfigurationAuxiliaryStorage.HAS_BEEN_CONFIGURED = True
