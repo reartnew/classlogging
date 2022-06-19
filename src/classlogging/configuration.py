@@ -5,9 +5,16 @@ import logging.config
 import os
 import typing as t
 
-from . import constants as c
-from .enums import LogStream, LogLevel
-from .facility import Logger, LogRecord, module_lock
+from .constants import (
+    LogStream,
+    LogLevel,
+    DEFAULT_BASE_LOGGER,
+    DEFAULT_LOG_FORMAT,
+    DEFAULT_LOG_FORMAT_COLORED,
+)
+from .extensions import LogRecord
+from .extensions import Logger
+from .service import module_lock
 from .storage import ConfigurationAuxiliaryStorage
 
 __all__ = [
@@ -21,7 +28,6 @@ def configure_logging(
     record_format: t.Optional[str] = None,
     stream: t.Union[str, t.TextIO, None] = LogStream.STDERR,
     colorize: bool = False,
-    root_logger_name: t.Optional[str] = None,
 ) -> None:
     """Perform all logging configurations"""
     with module_lock():
@@ -34,8 +40,6 @@ def configure_logging(
         logging.addLevelName(Logger.TRACE, "TRACE")
         setattr(logging, "TRACE", Logger.TRACE)
 
-        if root_logger_name is not None:
-            c.DEFAULT_BASE_LOGGER = root_logger_name
         handlers: t.Dict[str, t.Dict[str, t.Union[str, t.TextIO]]] = {}
         if record_format is not None and colorize:
             raise ValueError("Can't colorize custom record format")
@@ -66,14 +70,14 @@ def configure_logging(
                 "version": 1,
                 "handlers": handlers,
                 "loggers": {
-                    c.DEFAULT_BASE_LOGGER: {
+                    DEFAULT_BASE_LOGGER: {
                         "handlers": list(handlers),
                         "level": getattr(logging, level),
                     },
                 },
                 "formatters": {
                     "__custom__": {
-                        "format": record_format or (c.DEFAULT_LOG_FORMAT_COLORED if colorize else c.DEFAULT_LOG_FORMAT)
+                        "format": record_format or (DEFAULT_LOG_FORMAT_COLORED if colorize else DEFAULT_LOG_FORMAT)
                     },
                 },
             }
