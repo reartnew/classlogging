@@ -14,6 +14,7 @@ __all__ = [
     "Logger",
     "LoggerMixin",
     "module_lock",
+    "LoggerProperty",
 ]
 
 
