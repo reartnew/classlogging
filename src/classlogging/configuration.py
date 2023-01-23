@@ -12,14 +12,30 @@ from .constants import (
     DEFAULT_LOG_FORMAT,
     DEFAULT_LOG_FORMAT_COLORED,
 )
-from .extensions import LogRecord
-from .extensions import Logger
+from .extensions import (
+    Logger,
+    LogRecord,
+)
 from .service import module_lock
 from .storage import ConfigurationAuxiliaryStorage
 
 __all__ = [
     "configure_logging",
+    "update_module",
 ]
+
+
+def update_module() -> None:
+    """Patch logging module"""
+    with module_lock():
+        if ConfigurationAuxiliaryStorage.LOGGING_MODULE_IS_PATCHED:
+            return
+        # Apply patches
+        logging.setLoggerClass(Logger)
+        logging.setLogRecordFactory(LogRecord)
+        logging.addLevelName(Logger.TRACE, "TRACE")
+        setattr(logging, "TRACE", Logger.TRACE)
+        ConfigurationAuxiliaryStorage.LOGGING_MODULE_IS_PATCHED = True
 
 
 def configure_logging(
@@ -33,13 +49,8 @@ def configure_logging(
     with module_lock():
         if ConfigurationAuxiliaryStorage.HAS_BEEN_CONFIGURED:
             raise RuntimeError("Logging has already been configured")
-
-        # Now apply patches
-        logging.setLoggerClass(Logger)
-        logging.setLogRecordFactory(LogRecord)
-        logging.addLevelName(Logger.TRACE, "TRACE")
-        setattr(logging, "TRACE", Logger.TRACE)
-
+    update_module()
+    with module_lock():
         handlers: t.Dict[str, t.Dict[str, t.Union[str, t.TextIO]]] = {}
         if record_format is not None and colorize:
             raise ValueError("Can't colorize custom record format")

@@ -11,6 +11,11 @@ class PytestLogger(LoggerMixin):
     """Test-related log emitter"""
 
 
+def test_non_configured_trace():
+    """Validate trace method presence before configuring"""
+    PytestLogger.logger.trace("trace method must be present")
+
+
 def test_line_emission(test_log_stream: io.StringIO):
     """Validate basic logging scenario for enabled level"""
     PytestLogger.logger.debug("test enabled")

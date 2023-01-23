@@ -6,6 +6,7 @@ from functools import lru_cache
 
 from .constants import DEFAULT_BASE_LOGGER
 from .extensions import Logger
+from .configuration import update_module
 
 __all__ = [
     "LoggerMixin",
@@ -19,6 +20,7 @@ class LoggerProperty:
     @staticmethod
     @lru_cache(1)
     def _prepare(caller_type: type) -> Logger:
+        update_module()
         logger_name: str = ".".join((DEFAULT_BASE_LOGGER, caller_type.__module__, caller_type.__name__))
         return t.cast(Logger, logging.getLogger(logger_name))
 
