@@ -4,12 +4,13 @@ from __future__ import annotations
 import logging
 import typing as t
 
-from .constants import DEFAULT_BASE_LOGGER, ROOT_LOGGER_NAME
+from .constants import DEFAULT_BASE_LOGGER, ROOT_LOGGER_CLEAN_NAME
 from .context import get_context_for_logger, LogContext
 
 __all__ = [
     "LogRecord",
     "Logger",
+    "get_logger",
 ]
 
 _COLOR_CODE_MAP: t.Dict[str, int] = {
@@ -27,7 +28,10 @@ _COLOR_CODE_MAP: t.Dict[str, int] = {
 
 def get_logger(name: str) -> Logger:
     """Get cast logger from clean name"""
-    return t.cast(Logger, logging.getLogger(f"{DEFAULT_BASE_LOGGER}.{name}"))
+    return t.cast(
+        Logger,
+        logging.getLogger(f"{DEFAULT_BASE_LOGGER}.{name}" if name != ROOT_LOGGER_CLEAN_NAME else DEFAULT_BASE_LOGGER),
+    )
 
 
 class WithCleanName:
@@ -36,7 +40,7 @@ class WithCleanName:
     name: str
 
     def __init__(self) -> None:
-        self.clean_name: str = self.name.split(".", maxsplit=1)[1] if "." in self.name else ROOT_LOGGER_NAME
+        self.clean_name: str = self.name.split(".", maxsplit=1)[1] if "." in self.name else ROOT_LOGGER_CLEAN_NAME
 
 
 class LogRecord(logging.LogRecord, WithCleanName):
@@ -81,7 +85,7 @@ class Logger(logging.Logger, WithCleanName):
 
     def get_superior(self) -> Logger:
         """Get preceding level's logger"""
-        if "." not in self.name:
+        if self.name == ROOT_LOGGER_CLEAN_NAME:
             raise ValueError("No superior logger for the root")
-        parent_name, _ = self.name.rsplit(".", maxsplit=1)
-        return t.cast(Logger, logging.getLogger(parent_name))
+        parent_name: str = self.clean_name.rsplit(".", 1)[0] if "." in self.clean_name else ROOT_LOGGER_CLEAN_NAME
+        return get_logger(parent_name)

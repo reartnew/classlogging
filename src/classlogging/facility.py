@@ -6,11 +6,13 @@ from functools import lru_cache
 
 from .configuration import update_module
 from .extensions import Logger, get_logger
+from .constants import ROOT_LOGGER_CLEAN_NAME
 
 __all__ = [
     "LoggerMixin",
     "LoggerProperty",
     "get_module_logger",
+    "get_root_logger",
 ]
 
 
@@ -42,3 +44,8 @@ def get_module_logger() -> Logger:
         return get_logger(logger_name)
     finally:
         del frame
+
+
+def get_root_logger() -> Logger:
+    """Return base logger for the whole subsystem"""
+    return get_logger(ROOT_LOGGER_CLEAN_NAME)

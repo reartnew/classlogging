@@ -9,7 +9,6 @@ import pytest
 
 import classlogging
 from classlogging.extensions import Logger
-from classlogging.facility import get_module_logger
 
 
 @pytest.fixture(scope="session")
@@ -104,4 +103,9 @@ def test_line_no_emission(test_log_stream: io.StringIO):
 
 def test_module_logger():
     """Check module-level logger"""
-    assert get_module_logger().clean_name == "tests.test_logging"
+    assert classlogging.get_module_logger().clean_name == "tests.test_logging"
+
+
+def test_root_logger():
+    """Validate root logger name"""
+    assert classlogging.get_root_logger().clean_name == ""
