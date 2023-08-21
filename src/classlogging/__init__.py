@@ -2,5 +2,5 @@
 
 from .configuration import configure_logging
 from .constants import LogLevel, LogStream
-from .facility import LoggerProperty, LoggerMixin
+from .facility import LoggerProperty, LoggerMixin, get_module_logger
 from .version import __version__

@@ -1,8 +1,9 @@
 """Module constants"""
 
 DEFAULT_BASE_LOGGER: str = "__classlogging__"
-DEFAULT_LOG_FORMAT: str = "%(asctime)s %(levelname)s [%(truncated_name)s] %(ctx)s%(message)s"
-DEFAULT_LOG_FORMAT_COLORED: str = "%(asctime)s %(colored_level_name)s [%(truncated_name)s] %(ctx)s%(message)s"
+ROOT_LOGGER_NAME: str = "<Root>"
+DEFAULT_LOG_FORMAT: str = "%(asctime)s %(levelname)s [%(clean_name)s] %(ctx)s%(message)s"
+DEFAULT_LOG_FORMAT_COLORED: str = "%(asctime)s %(colored_level_name)s [%(clean_name)s] %(ctx)s%(message)s"
 
 
 class LogStream:

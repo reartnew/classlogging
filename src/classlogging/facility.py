@@ -1,16 +1,16 @@
 """Facility classes"""
 
-import logging
+import inspect
 import typing as t
 from functools import lru_cache
 
-from .constants import DEFAULT_BASE_LOGGER
-from .extensions import Logger
 from .configuration import update_module
+from .extensions import Logger, get_logger
 
 __all__ = [
     "LoggerMixin",
     "LoggerProperty",
+    "get_module_logger",
 ]
 
 
@@ -21,8 +21,7 @@ class LoggerProperty:
     @lru_cache(1)
     def _prepare(caller_type: type) -> Logger:
         update_module()
-        logger_name: str = ".".join((DEFAULT_BASE_LOGGER, caller_type.__module__, caller_type.__name__))
-        return t.cast(Logger, logging.getLogger(logger_name))
+        return get_logger(f"{caller_type.__module__}.{caller_type.__name__}")
 
     def __get__(self, caller_instance: t.Any, caller_type: type) -> Logger:
         return self._prepare(caller_type)
@@ -32,3 +31,14 @@ class LoggerMixin:
     """Add `logger` property"""
 
     logger = LoggerProperty()
+
+
+def get_module_logger() -> Logger:
+    """Return the module logger name based on the caller's frame"""
+    frame = inspect.currentframe()
+    try:
+        frame_globals: t.Dict[str, t.Any] = frame.f_back.f_globals  # type: ignore
+        logger_name: str = frame_globals["__name__"]
+        return get_logger(logger_name)
+    finally:
+        del frame

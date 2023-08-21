@@ -3,12 +3,13 @@
 
 import io
 import re
-from typing import Generator
-from typing import List
+import typing as t
 
 import pytest
 
 import classlogging
+from classlogging.extensions import Logger
+from classlogging.facility import get_module_logger
 
 
 @pytest.fixture(scope="session")
@@ -21,7 +22,7 @@ def session_log_stream() -> io.StringIO:
 
 
 @pytest.fixture
-def test_log_stream(session_log_stream) -> Generator[io.StringIO, None, None]:
+def test_log_stream(session_log_stream) -> t.Generator[io.StringIO, None, None]:
     """Give test stream and clear after usage"""
     yield session_log_stream
     session_log_stream.truncate(0)
@@ -50,9 +51,20 @@ def test_non_configured_trace():
 def test_line_emission(test_log_stream: io.StringIO):
     """Validate basic logging scenario for enabled level"""
     PytestLogger.logger.debug("test enabled")
-    log_lines: List[str] = test_log_stream.getvalue().splitlines()
+    log_lines: t.List[str] = test_log_stream.getvalue().splitlines()
     assert len(log_lines) == 1
     assert _match_line("test enabled", log_lines[0])
+
+
+def test_superior(test_log_stream: io.StringIO):
+    """Validate basic logging scenario for enabled level"""
+    assert isinstance(PytestLogger.logger.parent, Logger)
+    assert PytestLogger.logger.clean_name == "tests.test_logging.PytestLogger"
+    super_logger: Logger = PytestLogger.logger.get_superior()
+    assert super_logger.clean_name == "tests.test_logging"
+    super_logger.trace("Foobar")
+    log_lines: t.List[str] = test_log_stream.getvalue().splitlines()
+    assert len(log_lines) == 0
 
 
 def test_line_emission_with_context(test_log_stream: io.StringIO):
@@ -60,7 +72,7 @@ def test_line_emission_with_context(test_log_stream: io.StringIO):
     with PytestLogger.logger.context(a="b"):
         PytestLogger.logger.debug("test ctx")
     PytestLogger.logger.debug("test no ctx")
-    log_lines: List[str] = test_log_stream.getvalue().splitlines()
+    log_lines: t.List[str] = test_log_stream.getvalue().splitlines()
     assert len(log_lines) == 2
     assert _match_line("{a=b} test ctx", log_lines[0])
     assert _match_line("test no ctx", log_lines[1])
@@ -75,7 +87,7 @@ def test_line_emission_with_nested_context(test_log_stream: io.StringIO):
             PytestLogger.logger.debug("test ctx lvl 2")
         PytestLogger.logger.debug("test ctx lvl 1.2")
     PytestLogger.logger.debug("test no ctx 2")
-    log_lines: List[str] = test_log_stream.getvalue().splitlines()
+    log_lines: t.List[str] = test_log_stream.getvalue().splitlines()
     assert len(log_lines) == 5
     assert _match_line("test no ctx 1", log_lines[0])
     assert _match_line("{a=b} test ctx lvl 1.1", log_lines[1])
@@ -88,3 +100,8 @@ def test_line_no_emission(test_log_stream: io.StringIO):
     """Validate basic logging scenario for disabled level"""
     PytestLogger.logger.trace("test disabled")
     assert not test_log_stream.getvalue()
+
+
+def test_module_logger():
+    """Check module-level logger"""
+    assert get_module_logger().clean_name == "tests.test_logging"

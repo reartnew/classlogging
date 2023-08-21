@@ -1,8 +1,10 @@
 """Logging classes extensions"""
+from __future__ import annotations
 
 import logging
 import typing as t
 
+from .constants import DEFAULT_BASE_LOGGER, ROOT_LOGGER_NAME
 from .context import get_context_for_logger, LogContext
 
 __all__ = [
@@ -23,12 +25,26 @@ _COLOR_CODE_MAP: t.Dict[str, int] = {
 }
 
 
-class LogRecord(logging.LogRecord):
+def get_logger(name: str) -> Logger:
+    """Get cast logger from clean name"""
+    return t.cast(Logger, logging.getLogger(f"{DEFAULT_BASE_LOGGER}.{name}"))
+
+
+class WithCleanName:
+    """Utility class adding sanitized logger name"""
+
+    name: str
+
+    def __init__(self) -> None:
+        self.clean_name: str = self.name.split(".", maxsplit=1)[1] if "." in self.name else ROOT_LOGGER_NAME
+
+
+class LogRecord(logging.LogRecord, WithCleanName):
     """Adds extra formatting attributes"""
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.truncated_name: str = self.name.split(".", maxsplit=1)[1]
+        logging.LogRecord.__init__(self, *args, **kwargs)
+        WithCleanName.__init__(self)
         self.colored_level_name: str = f"\033[{_COLOR_CODE_MAP[self.levelname]}m{self.levelname}\033[0m"
         self.ctx: str = ""
         context: t.Optional[dict] = get_context_for_logger(self.name)
@@ -36,7 +52,7 @@ class LogRecord(logging.LogRecord):
             self.ctx = "".join(f"{{{key}={value}}} " for key, value in context.items())
 
 
-class Logger(logging.Logger):
+class Logger(logging.Logger, WithCleanName):
     """Provides even more detailed debugging method 'trace'"""
 
     TRACE: int = 5
@@ -58,3 +74,14 @@ class Logger(logging.Logger):
     def context(self, **kwargs) -> LogContext:
         """Obtain context wrapper"""
         return LogContext(logger_name=self.name, **kwargs)
+
+    def __init__(self, *args, **kwargs) -> None:
+        logging.Logger.__init__(self, *args, **kwargs)
+        WithCleanName.__init__(self)
+
+    def get_superior(self) -> Logger:
+        """Get preceding level's logger"""
+        if "." not in self.name:
+            raise ValueError("No superior logger for the root")
+        parent_name, _ = self.name.rsplit(".", maxsplit=1)
+        return t.cast(Logger, logging.getLogger(parent_name))
