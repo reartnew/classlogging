@@ -32,11 +32,15 @@ class PytestLogger(classlogging.LoggerMixin):
     """Test-related log emitter"""
 
 
+class OneMorePytestLogger(classlogging.LoggerMixin):
+    """Test-related log extra emitter"""
+
+
 def _match_line(payload: str, line: str) -> bool:
     return bool(
         re.fullmatch(
             rf"^\d{{4}}-\d{{2}}-\d{{2}} \d{{2}}:\d{{2}}:\d{{2}},\d{{3}} "
-            rf"DEBUG \[tests\.test_logging\.PytestLogger] {payload}$",
+            rf"DEBUG \[tests\.test_logging\.(OneMore)?PytestLogger] {payload}$",
             line,
         )
     )
@@ -104,8 +108,20 @@ def test_line_no_emission(test_log_stream: io.StringIO):
 def test_module_logger():
     """Check module-level logger"""
     assert classlogging.get_module_logger().clean_name == "tests.test_logging"
+    assert classlogging.get_module_logger() is PytestLogger.logger.get_superior()
 
 
 def test_root_logger():
     """Validate root logger name"""
     assert classlogging.get_root_logger().clean_name == ""
+
+
+def test_large_context(test_log_stream: io.StringIO):
+    """Validate root logger name"""
+    with classlogging.get_module_logger().context(foo="bar"), OneMorePytestLogger.logger.context(foo="baz"):
+        PytestLogger.logger.debug("test one")
+        OneMorePytestLogger.logger.debug("test two")
+    log_lines: t.List[str] = test_log_stream.getvalue().splitlines()
+    assert len(log_lines) == 2
+    assert _match_line("{foo=bar} test one", log_lines[0])
+    assert _match_line("{foo=baz} test two", log_lines[1])
