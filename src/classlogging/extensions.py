@@ -3,6 +3,8 @@
 import logging
 import typing as t
 
+from .context import get_context_for_logger, LogContext
+
 __all__ = [
     "LogRecord",
     "Logger",
@@ -28,6 +30,10 @@ class LogRecord(logging.LogRecord):
         super().__init__(*args, **kwargs)
         self.truncated_name: str = self.name.split(".", maxsplit=1)[1]
         self.colored_level_name: str = f"\033[{_COLOR_CODE_MAP[self.levelname]}m{self.levelname}\033[0m"
+        self.ctx: str = ""
+        context: t.Optional[dict] = get_context_for_logger(self.name)
+        if context is not None:
+            self.ctx = "".join(f"{{{key}={value}}} " for key, value in context.items())
 
 
 class Logger(logging.Logger):
@@ -48,3 +54,7 @@ class Logger(logging.Logger):
     def exception(self, msg: object = None, *args, exc_info: bool = True, **kwargs) -> None:  # type: ignore
         """Make `msg` param optional"""
         super().exception("" if msg is None else msg, *args, exc_info=exc_info, **kwargs)
+
+    def context(self, **kwargs) -> LogContext:
+        """Obtain context wrapper"""
+        return LogContext(logger_name=self.name, **kwargs)
