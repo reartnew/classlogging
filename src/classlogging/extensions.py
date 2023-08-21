@@ -50,10 +50,8 @@ class LogRecord(logging.LogRecord, WithCleanName):
         logging.LogRecord.__init__(self, *args, **kwargs)
         WithCleanName.__init__(self)
         self.colored_level_name: str = f"\033[{_COLOR_CODE_MAP[self.levelname]}m{self.levelname}\033[0m"
-        self.ctx: str = ""
-        context: t.Optional[dict] = get_context_for_logger(self.name)
-        if context is not None:
-            self.ctx = "".join(f"{{{key}={value}}} " for key, value in context.items())
+        self.context: t.Optional[dict] = get_context_for_logger(self.name)
+        self.ctx_prefix: str = "" if self.context is None else "".join(f"{{{k}={v}}} " for k, v in self.context.items())
 
 
 class Logger(logging.Logger, WithCleanName):

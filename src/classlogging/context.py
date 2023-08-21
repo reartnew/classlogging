@@ -5,14 +5,14 @@ import typing as t
 from contextvars import ContextVar
 from threading import Lock
 
-LOGGING_CONTEXT_HOLDER: ContextVar[t.Optional[t.Dict[str, dict]]] = ContextVar("LOGGING_CONTEXT_HOLDER", default=None)
+_logging_context_holder: ContextVar[t.Optional[t.Dict[str, dict]]] = ContextVar("_logging_context_holder", default=None)
 _setter_lock = Lock()
 
 
 @functools.lru_cache()
 def get_context_for_logger(logger_name: str) -> t.Optional[dict]:
     """Return all context variables for the logger"""
-    all_contexts: t.Optional[dict] = LOGGING_CONTEXT_HOLDER.get()
+    all_contexts: t.Optional[dict] = _logging_context_holder.get()
     if all_contexts is None:
         return None
     result_vars: t.Dict[str, t.Tuple[str, t.Any]] = {}
@@ -38,11 +38,11 @@ class LogContext:
     def __enter__(self) -> None:
         """Set a variable for the logger"""
         with _setter_lock:
-            all_contexts: dict = LOGGING_CONTEXT_HOLDER.get() or {}
+            all_contexts: dict = _logging_context_holder.get() or {}
             if self._logger_name not in all_contexts:
                 all_contexts[self._logger_name] = {}
             all_contexts[self._logger_name].update(self._kwargs)
-            LOGGING_CONTEXT_HOLDER.set(all_contexts)
+            _logging_context_holder.set(all_contexts)
             get_context_for_logger.cache_clear()
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
@@ -51,7 +51,7 @@ class LogContext:
 
     def _unset(self) -> None:
         with _setter_lock:
-            all_contexts: dict = LOGGING_CONTEXT_HOLDER.get() or {}
+            all_contexts: dict = _logging_context_holder.get() or {}
             if self._logger_name not in all_contexts:
                 return
             logger_context: dict = all_contexts[self._logger_name]
@@ -61,5 +61,5 @@ class LogContext:
                 logger_context.pop(field_name)
             if not logger_context:
                 all_contexts.pop(self._logger_name)
-            LOGGING_CONTEXT_HOLDER.set(all_contexts or None)
+            _logging_context_holder.set(all_contexts or None)
             get_context_for_logger.cache_clear()
