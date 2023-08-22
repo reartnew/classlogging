@@ -4,9 +4,8 @@ import inspect
 import typing as t
 from functools import lru_cache
 
-from .configuration import update_module
-from .extensions import Logger, get_logger
 from .constants import ROOT_LOGGER_CLEAN_NAME
+from .extensions import Logger, get_logger
 
 __all__ = [
     "LoggerMixin",
@@ -22,7 +21,6 @@ class LoggerProperty:
     @staticmethod
     @lru_cache(1)
     def _prepare(caller_type: type) -> Logger:
-        update_module()
         return get_logger(f"{caller_type.__module__}.{caller_type.__name__}")
 
     def __get__(self, caller_instance: t.Any, caller_type: type) -> Logger:

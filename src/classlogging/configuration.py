@@ -12,30 +12,13 @@ from .constants import (
     DEFAULT_LOG_FORMAT,
     DEFAULT_LOG_FORMAT_COLORED,
 )
-from .extensions import (
-    Logger,
-    LogRecord,
-)
+from .extensions import update_module
 from .service import module_lock
 from .storage import ConfigurationAuxiliaryStorage
 
 __all__ = [
     "configure_logging",
-    "update_module",
 ]
-
-
-def update_module() -> None:
-    """Patch logging module"""
-    with module_lock():
-        if ConfigurationAuxiliaryStorage.LOGGING_MODULE_IS_PATCHED:
-            return
-        # Apply patches
-        logging.setLoggerClass(Logger)
-        logging.setLogRecordFactory(LogRecord)
-        logging.addLevelName(Logger.TRACE, "TRACE")
-        setattr(logging, "TRACE", Logger.TRACE)
-        ConfigurationAuxiliaryStorage.LOGGING_MODULE_IS_PATCHED = True
 
 
 def configure_logging(

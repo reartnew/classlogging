@@ -1,16 +1,20 @@
 """Logging classes extensions"""
 from __future__ import annotations
 
+import functools
 import logging
 import typing as t
 
 from .constants import DEFAULT_BASE_LOGGER, ROOT_LOGGER_CLEAN_NAME
 from .context import get_context_for_logger, LogContext
+from .service import module_lock
+from .storage import ConfigurationAuxiliaryStorage
 
 __all__ = [
     "LogRecord",
     "Logger",
     "get_logger",
+    "update_module",
 ]
 
 _COLOR_CODE_MAP: t.Dict[str, int] = {
@@ -26,8 +30,23 @@ _COLOR_CODE_MAP: t.Dict[str, int] = {
 }
 
 
+@functools.lru_cache(1)
+def update_module() -> None:
+    """Patch logging module"""
+    with module_lock():
+        if ConfigurationAuxiliaryStorage.LOGGING_MODULE_IS_PATCHED:
+            return
+        # Apply patches
+        logging.setLoggerClass(Logger)
+        logging.setLogRecordFactory(LogRecord)
+        logging.addLevelName(Logger.TRACE, "TRACE")
+        setattr(logging, "TRACE", Logger.TRACE)
+        ConfigurationAuxiliaryStorage.LOGGING_MODULE_IS_PATCHED = True
+
+
 def get_logger(name: str) -> Logger:
     """Get cast logger from clean name"""
+    update_module()
     return t.cast(
         Logger,
         logging.getLogger(f"{DEFAULT_BASE_LOGGER}.{name}" if name != ROOT_LOGGER_CLEAN_NAME else DEFAULT_BASE_LOGGER),
