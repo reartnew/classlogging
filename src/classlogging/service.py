@@ -12,8 +12,5 @@ __all__ = [
 @contextmanager
 def module_lock():
     """Wrap routines into native `logging` package lock"""
-    logging._acquireLock()  # noqa
-    try:
+    with logging._lock:  # noqa
         yield
-    finally:
-        logging._releaseLock()  # noqa
