@@ -1,4 +1,5 @@
 """Check logging library usage"""
+
 # pylint: disable=redefined-outer-name
 
 import io

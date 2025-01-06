@@ -1,4 +1,5 @@
 """Logging classes extensions"""
+
 from __future__ import annotations
 
 import functools
