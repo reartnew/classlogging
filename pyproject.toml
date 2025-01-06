@@ -36,6 +36,13 @@ tests = [
 tox = "^4.23.2"
 setuptools = "^75.7.0"
 
+[tool.tox]
+envlist = ["py39", "py310", "py311", "py312", "py313"]
+
+[tool.tox.env_run_base]
+extras = ["tests"]
+commands = [["pytest"]]
+
 [tool.pytest.ini_options]
 testpaths = [
     "src",
