@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "classlogging"
-version = "1.2.0"
+version = "1.2.1"
 description = "Class-based logging facility"
 license = "MIT"
 authors = [
