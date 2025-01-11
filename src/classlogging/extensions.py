@@ -29,6 +29,7 @@ _COLOR_CODE_MAP: t.Dict[str, int] = {
     "NOTSET": 37,
     "TRACE": 33,
 }
+_DEFAULT_COLOR_CODE: int = 37
 
 
 @functools.lru_cache(1)
@@ -69,7 +70,8 @@ class LogRecord(logging.LogRecord, WithCleanName):
     def __init__(self, *args, **kwargs):
         logging.LogRecord.__init__(self, *args, **kwargs)
         WithCleanName.__init__(self)
-        self.colored_level_name: str = f"\033[{_COLOR_CODE_MAP[self.levelname]}m{self.levelname}\033[0m"
+        color_code: int = _COLOR_CODE_MAP.get(self.levelname, _DEFAULT_COLOR_CODE)
+        self.colored_level_name: str = f"\033[{color_code}m{self.levelname}\033[0m"
         self.context: t.Optional[dict] = get_context_for_logger(self.name)
         self.ctx_prefix: str = "" if self.context is None else "".join(f"{{{k}={v}}} " for k, v in self.context.items())
 
