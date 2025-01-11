@@ -37,7 +37,7 @@ def get_module_logger() -> Logger:
     """Return the module logger name based on the caller's frame"""
     frame = inspect.currentframe()
     try:
-        frame_globals: t.Dict[str, t.Any] = frame.f_back.f_globals  # type: ignore
+        frame_globals: dict[str, t.Any] = frame.f_back.f_globals  # type: ignore
         logger_name: str = frame_globals["__name__"]
         return get_logger(logger_name)
     finally:

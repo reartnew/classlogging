@@ -5,7 +5,7 @@ import typing as t
 from contextvars import ContextVar
 from threading import Lock
 
-_logging_context_holder: ContextVar[t.Optional[t.Dict[str, dict]]] = ContextVar("_logging_context_holder", default=None)
+_logging_context_holder: ContextVar[t.Optional[dict[str, dict]]] = ContextVar("_logging_context_holder", default=None)
 _setter_lock = Lock()
 
 
@@ -15,7 +15,7 @@ def get_context_for_logger(logger_name: str) -> t.Optional[dict]:
     all_contexts: t.Optional[dict] = _logging_context_holder.get()
     if all_contexts is None:
         return None
-    result_vars: t.Dict[str, t.Tuple[str, t.Any]] = {}
+    result_vars: dict[str, tuple[str, t.Any]] = {}
     for context_name, context_vars in all_contexts.items():
         # Check if context name applies to the selected logger
         if logger_name != context_name and not logger_name.startswith(f"{context_name}."):

@@ -34,7 +34,7 @@ def configure_logging(
             raise RuntimeError("Logging has already been configured")
     update_module()
     with module_lock():
-        handlers: t.Dict[str, t.Dict[str, t.Union[str, t.TextIO]]] = {}
+        handlers: dict[str, dict[str, t.Union[str, t.TextIO]]] = {}
         if record_format is not None and colorize:
             raise ValueError("Can't colorize custom record format")
 

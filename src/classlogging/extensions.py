@@ -18,7 +18,7 @@ __all__ = [
     "update_module",
 ]
 
-_COLOR_CODE_MAP: t.Dict[str, int] = {
+_COLOR_CODE_MAP: dict[str, int] = {
     "CRITICAL": 31,
     "FATAL": 31,
     "ERROR": 31,
